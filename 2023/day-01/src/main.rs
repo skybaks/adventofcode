@@ -1,6 +1,4 @@
-
 use std::fs;
-
 
 fn part1() {
     let file_path = "C:\\Users\\Tom\\Documents\\_cp\\adventofcode\\2023\\day-01\\input.txt";
