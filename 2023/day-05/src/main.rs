@@ -2,7 +2,7 @@ use std::fs;
 
 #[derive(Debug)]
 struct SeedMapping {
-    seeds: Vec<u64>,
+    seeds: Vec<i64>,
     instructions: Vec<InstructionsMap>,
 }
 
@@ -15,9 +15,9 @@ struct InstructionsMap {
 
 #[derive(Debug)]
 struct MappingRange {
-    dst_range_start: u64,
-    src_range_start: u64,
-    range_len: u64,
+    dst_range_start: i64,
+    src_range_start: i64,
+    range_len: i64,
 }
 
 impl SeedMapping {
@@ -28,7 +28,7 @@ impl SeedMapping {
         }
     }
 
-    fn seed_to_location(&self, seed: u64) -> u64 {
+    fn seed_to_location(&self, seed: i64) -> i64 {
         let mut start_name = "seed";
         let mut value = seed;
 
@@ -39,7 +39,7 @@ impl SeedMapping {
                 .find(|n| n.src_name == start_name)
                 .expect("Error could not find instruction set");
 
-            let new_value = instr.map_value(value);
+            let new_value = instr.map_value2(value);
             //println!("{}->{}: {}->{}", instr.src_name, instr.dst_name, value, new_value);
 
             value = new_value;
@@ -53,10 +53,10 @@ impl SeedMapping {
         value
     }
 
-    fn seed_to_location2(&self, seed: u64) -> u64 {
+    fn seed_to_location2(&self, seed: i64) -> i64 {
         let mut value = seed;
         for instr in &self.instructions {
-            value = instr.map_value(value);
+            value = instr.map_value2(value);
         }
         value
     }
@@ -71,13 +71,27 @@ impl InstructionsMap {
         }
     }
 
-    fn map_value(&self, src: u64) -> u64 {
+    fn map_value(&self, src: i64) -> i64 {
         for range in &self.ranges {
             if src >= range.src_range_start && src < range.src_range_start + range.range_len {
                 //return src + range.dst_range_start - range.src_range_start;
-                let delta = i128::from(range.dst_range_start) - i128::from(range.src_range_start);
-                let new_val = i128::from(src) + delta;
-                return u64::try_from(new_val).expect("Error converting back to unsigned");
+                let delta = range.dst_range_start - range.src_range_start;
+                let new_val = src + delta;
+                return new_val;
+            }
+        }
+        return src;
+    }
+
+    fn map_value2(&self, src: i64) -> i64 {
+        for range in &self.ranges {
+            if src >= range.src_range_start && src < range.src_range_start + range.range_len {
+                //return src + range.dst_range_start - range.src_range_start;
+                let delta = range.dst_range_start - range.src_range_start;
+                let new_val = src + delta;
+                return new_val;
+            } else if src < range.src_range_start {
+                break;
             }
         }
         return src;
@@ -109,7 +123,7 @@ fn read_input() -> SeedMapping {
     for line in contents.lines() {
         if line.starts_with("seeds: ") {
             for seed_str in line[7..].split(" ") {
-                let seed = seed_str.parse::<u64>().expect("Error parsing seed number");
+                let seed = seed_str.parse::<i64>().expect("Error parsing seed number");
                 seed_mapping.seeds.push(seed);
             }
         } else if line.ends_with(" map:") {
@@ -134,17 +148,17 @@ fn read_input() -> SeedMapping {
             new_range.dst_range_start = split_map_range
                 .next()
                 .expect("Error getting dest range start")
-                .parse::<u64>()
+                .parse::<i64>()
                 .expect("Error parsing dest range number");
             new_range.src_range_start = split_map_range
                 .next()
                 .expect("Error getting src reange start")
-                .parse::<u64>()
+                .parse::<i64>()
                 .expect("Error parsing src range number");
             new_range.range_len = split_map_range
                 .next()
                 .expect("Error getting range len")
-                .parse::<u64>()
+                .parse::<i64>()
                 .expect("Error parsing range len number");
             last_instr.ranges.push(new_range);
             last_instr
@@ -157,7 +171,7 @@ fn read_input() -> SeedMapping {
 }
 
 fn part1(mapping: &SeedMapping) {
-    let mut min_location = u64::MAX;
+    let mut min_location = i64::MAX;
     mapping
         .seeds
         .iter()
@@ -167,7 +181,7 @@ fn part1(mapping: &SeedMapping) {
 }
 
 fn part2(mapping: &SeedMapping) {
-    let mut min_location = u64::MAX;
+    let mut min_location = i64::MAX;
     let mut i = 0;
     while i < mapping.seeds.len() {
         let seed_start = mapping
