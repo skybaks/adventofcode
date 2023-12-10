@@ -36,9 +36,8 @@ fn main() {
 }
 
 fn read_input() -> HashMap<(usize, usize), char> {
-    let contents =
-        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-10\\input.txt")
-            .expect("Error reading input file");
+    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-10\\input.txt")
+        .expect("Error reading input file");
     let mut points = HashMap::new();
     for (y, line) in contents.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
@@ -53,10 +52,8 @@ fn part1(points: &HashMap<(usize, usize), char>) -> Vec<(usize, usize)> {
         .iter()
         .find(|&k| *k.1 == 'S')
         .expect("Error getting S element");
-    //println!("{:?}", start);
 
     let starting_cxns = get_connections(points, start.0);
-    //println!("{:?}", starting_cxns);
     let mut prev_coord = *start.0;
     let mut next_coord = *starting_cxns
         .first()
@@ -80,14 +77,12 @@ fn part1(points: &HashMap<(usize, usize), char>) -> Vec<(usize, usize)> {
         prev_coord = next_coord;
         next_coord = get_coord(&next_coord, next_dir);
         coords.push(next_coord.clone());
-        //println!("{:?}-> {} ->{:?}", enter_dir, next_char, next_dir);
     }
     println!("Part 1: {}", total_steps / 2);
     coords
 }
 
 fn part2(points: &HashMap<(usize, usize), char>, path_coords: &Vec<(usize, usize)>) {
-    //println!("{:?}", path_coords);
     let mut enclosed_points = Vec::new();
     // use ray casting algorithm: https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
     for point in points.keys() {
@@ -100,6 +95,7 @@ fn part2(points: &HashMap<(usize, usize), char>, path_coords: &Vec<(usize, usize
             rayx.0 += 1;
             if path_coords.contains(&rayx) {
                 let c = points.get(&rayx).expect("Error getting path char");
+                // Assume the ray im casting is slightly above the polygon border
                 if !['-', '7', 'F', 'S'].contains(c) {
                     intersectionsx += 1;
                 }
@@ -111,28 +107,24 @@ fn part2(points: &HashMap<(usize, usize), char>, path_coords: &Vec<(usize, usize
             rayy.1 += 1;
             if path_coords.contains(&rayy) {
                 let c = points.get(&rayy).expect("Error getting path char");
+                // Assume the ray im casting is slightly to the left of the polygon border
                 if !['L', '|', 'F', 'S'].contains(c) {
                     intersectionsy += 1;
                 }
             }
         }
 
-        if intersectionsx % 2 != 0
-        && intersectionsy % 2 != 0
-        {
+        if intersectionsx % 2 != 0 && intersectionsy % 2 != 0 {
             enclosed_points.push(point.clone());
         }
     }
-    println!("{:?}, {}", enclosed_points, enclosed_points.len());
-    // 377 is too high
+    println!("Part 2: {}", enclosed_points.len());
 }
 
 fn get_connections(
     points: &HashMap<(usize, usize), char>,
     point: &(usize, usize),
 ) -> Vec<(usize, usize)> {
-    // left (x-1), right (x+1), up (y-1), down (y+1)
-    // remember to bounds check to prevent underflow
     let (x, y) = point.clone();
     let mut connections: Vec<(usize, usize)> = Vec::new();
     if x > 0 && points.contains_key(&(x - 1, y)) && connection_valid(points, point, &(x - 1, y)) {
@@ -168,7 +160,6 @@ fn connection_valid(
     for d1 in &dirs1 {
         for d2 in &dirs2 {
             if d1.equivalent(&dir) && d2.equivalent(&dir.get_complement()) {
-                //println!("{}->{} {:?}: {:?}, {:?}", c1, c2, dir, d1, d2);
                 return true;
             }
         }
@@ -188,24 +179,6 @@ fn char_dirs(c: &char) -> [ConnectionDirs; 2] {
         '.' => [ConnectionDirs::None, ConnectionDirs::None],
         'S' => [ConnectionDirs::All, ConnectionDirs::All],
         _ => panic!("Error unexpected character"),
-    }
-}
-
-fn dir_chars(d: &[ConnectionDirs; 2]) -> char {
-    if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::South) {
-        '|'
-    } else if d.contains(&ConnectionDirs::West) && d.contains(&ConnectionDirs::East) {
-        '-'
-    } else if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::East) {
-        'L'
-    } else if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::West) {
-        'J'
-    } else if d.contains(&ConnectionDirs::South) && d.contains(&ConnectionDirs::West) {
-        '7'
-    } else if d.contains(&ConnectionDirs::South) && d.contains(&ConnectionDirs::East) {
-        'F'
-    } else {
-        panic!("Unexpected input dirs")
     }
 }
 
