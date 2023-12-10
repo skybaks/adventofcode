@@ -11,21 +11,6 @@ enum ConnectionDirs {
 }
 
 impl ConnectionDirs {
-    fn complement(&self, dir: &ConnectionDirs) -> bool {
-        return (*self == ConnectionDirs::West && *dir == ConnectionDirs::East)
-            || (*self == ConnectionDirs::East && *dir == ConnectionDirs::West)
-            || (*self == ConnectionDirs::North && *dir == ConnectionDirs::South)
-            || (*self == ConnectionDirs::South && *dir == ConnectionDirs::North)
-            || (*self == ConnectionDirs::All && *dir == ConnectionDirs::East)
-            || (*self == ConnectionDirs::All && *dir == ConnectionDirs::West)
-            || (*self == ConnectionDirs::All && *dir == ConnectionDirs::South)
-            || (*self == ConnectionDirs::All && *dir == ConnectionDirs::North)
-            || (*self == ConnectionDirs::West && *dir == ConnectionDirs::All)
-            || (*self == ConnectionDirs::East && *dir == ConnectionDirs::All)
-            || (*self == ConnectionDirs::North && *dir == ConnectionDirs::All)
-            || (*self == ConnectionDirs::South && *dir == ConnectionDirs::All);
-    }
-
     fn get_complement(&self) -> ConnectionDirs {
         match *self {
             ConnectionDirs::North => ConnectionDirs::South,
@@ -46,7 +31,8 @@ impl ConnectionDirs {
 
 fn main() {
     let data = read_input();
-    part1(&data);
+    let path_coords = part1(&data);
+    part2(&data, &path_coords);
 }
 
 fn read_input() -> HashMap<(usize, usize), char> {
@@ -62,7 +48,7 @@ fn read_input() -> HashMap<(usize, usize), char> {
     points
 }
 
-fn part1(points: &HashMap<(usize, usize), char>) {
+fn part1(points: &HashMap<(usize, usize), char>) -> Vec<(usize, usize)> {
     let start = points
         .iter()
         .find(|&k| *k.1 == 'S')
@@ -76,10 +62,13 @@ fn part1(points: &HashMap<(usize, usize), char>) {
         .first()
         .expect("Error getting first starting connection");
     let mut total_steps = 0;
+    let mut coords = vec![next_coord];
     loop {
         total_steps += 1;
         let enter_dir = get_direction(&prev_coord, &next_coord);
-        let next_char = points.get(&next_coord).expect("Error getting next connection char");
+        let next_char = points
+            .get(&next_coord)
+            .expect("Error getting next connection char");
         if *next_char == 'S' {
             break;
         }
@@ -90,9 +79,52 @@ fn part1(points: &HashMap<(usize, usize), char>) {
             .expect("Error getting next dir");
         prev_coord = next_coord;
         next_coord = get_coord(&next_coord, next_dir);
+        coords.push(next_coord.clone());
         //println!("{:?}-> {} ->{:?}", enter_dir, next_char, next_dir);
     }
-    println!("Part 1: {}", total_steps/2);
+    println!("Part 1: {}", total_steps / 2);
+    coords
+}
+
+fn part2(points: &HashMap<(usize, usize), char>, path_coords: &Vec<(usize, usize)>) {
+    //println!("{:?}", path_coords);
+    let mut enclosed_points = Vec::new();
+    // use ray casting algorithm: https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
+    for point in points.keys() {
+        if path_coords.contains(point) {
+            continue;
+        }
+        let mut rayx = point.clone();
+        let mut intersectionsx = 0;
+        while points.contains_key(&rayx) {
+            rayx.0 += 1;
+            if path_coords.contains(&rayx) {
+                let c = points.get(&rayx).expect("Error getting path char");
+                if !['-', '7', 'F', 'S'].contains(c) {
+                    intersectionsx += 1;
+                }
+            }
+        }
+        let mut rayy = point.clone();
+        let mut intersectionsy = 0;
+        while points.contains_key(&rayy) {
+            rayy.1 += 1;
+            if path_coords.contains(&rayy) {
+                let c = points.get(&rayy).expect("Error getting path char");
+                if !['L', '|', 'F', 'S'].contains(c) {
+                    intersectionsy += 1;
+                }
+            }
+        }
+
+        if intersectionsx % 2 != 0
+        && intersectionsy % 2 != 0
+        {
+            enclosed_points.push(point.clone());
+        }
+    }
+    println!("{:?}, {}", enclosed_points, enclosed_points.len());
+    // 377 is too high
 }
 
 fn get_connections(
@@ -159,6 +191,24 @@ fn char_dirs(c: &char) -> [ConnectionDirs; 2] {
     }
 }
 
+fn dir_chars(d: &[ConnectionDirs; 2]) -> char {
+    if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::South) {
+        '|'
+    } else if d.contains(&ConnectionDirs::West) && d.contains(&ConnectionDirs::East) {
+        '-'
+    } else if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::East) {
+        'L'
+    } else if d.contains(&ConnectionDirs::North) && d.contains(&ConnectionDirs::West) {
+        'J'
+    } else if d.contains(&ConnectionDirs::South) && d.contains(&ConnectionDirs::West) {
+        '7'
+    } else if d.contains(&ConnectionDirs::South) && d.contains(&ConnectionDirs::East) {
+        'F'
+    } else {
+        panic!("Unexpected input dirs")
+    }
+}
+
 fn get_direction(point1: &(usize, usize), point2: &(usize, usize)) -> ConnectionDirs {
     let diff = (
         i64::try_from(point2.0).expect("Error casting to i64")
@@ -182,10 +232,10 @@ fn get_direction(point1: &(usize, usize), point2: &(usize, usize)) -> Connection
 
 fn get_coord(start: &(usize, usize), dir: &ConnectionDirs) -> (usize, usize) {
     match dir {
-        ConnectionDirs::North => (start.0, start.1-1),
-        ConnectionDirs::South => (start.0, start.1+1),
-        ConnectionDirs::East => (start.0+1, start.1),
-        ConnectionDirs::West => (start.0-1, start.1),
-        _ => *start
+        ConnectionDirs::North => (start.0, start.1 - 1),
+        ConnectionDirs::South => (start.0, start.1 + 1),
+        ConnectionDirs::East => (start.0 + 1, start.1),
+        ConnectionDirs::West => (start.0 - 1, start.1),
+        _ => *start,
     }
 }
