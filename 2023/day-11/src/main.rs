@@ -2,12 +2,13 @@ use std::fs;
 
 fn main() {
     let data = read_input();
-    part1(&data);
+    part12(&data);
 }
 
 fn read_input() -> Vec<(i64, i64)> {
-    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-11\\input.txt")
-        .expect("Error reading input file");
+    let contents =
+        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-11\\input.txt")
+            .expect("Error reading input file");
     let mut galaxy_posns = Vec::new();
     let mut max_x = 0;
     let mut max_y = 0;
@@ -21,7 +22,9 @@ fn read_input() -> Vec<(i64, i64)> {
         }
     }
 
-    //println!("{:?}", galaxy_posns);
+    // For part 1 this should be drift_dist=1, for part 2 its drift_dist=1,000,000-1
+    let drift_dist = 1000000 - 1;
+
     let mut empty_xs = Vec::new();
     for x in 0..=max_x {
         if !galaxy_posns.iter().any(|&p| p.0 == x as i64) {
@@ -34,9 +37,8 @@ fn read_input() -> Vec<(i64, i64)> {
         galaxy_posns
             .iter_mut()
             .filter(|p| p.0 > x as i64)
-            .for_each(|p| p.0 += 1);
+            .for_each(|p| p.0 += drift_dist);
     }
-    //println!("{:?}", galaxy_posns);
     let mut empty_ys = Vec::new();
     for y in 0..=max_y {
         if !galaxy_posns.iter().any(|&p| p.1 == y as i64) {
@@ -49,20 +51,18 @@ fn read_input() -> Vec<(i64, i64)> {
         galaxy_posns
             .iter_mut()
             .filter(|p| p.1 > y as i64)
-            .for_each(|p| p.1 += 1);
+            .for_each(|p| p.1 += drift_dist);
     }
-    //println!("{:?}", galaxy_posns);
 
     galaxy_posns
 }
 
-fn part1(galaxy_posns: &Vec<(i64, i64)>) {
+fn part12(galaxy_posns: &Vec<(i64, i64)>) {
     let mut total_dist = 0;
-    for (i1, posn) in galaxy_posns.iter().enumerate() {
-        for (i2, pair) in galaxy_posns.iter().enumerate() {
+    for posn in galaxy_posns {
+        for pair in galaxy_posns {
             if pair != posn {
                 let dist = (pair.0 - posn.0).abs() + (pair.1 - posn.1).abs();
-                //println!("{}->{}={}", i1+1, i2+2, dist);
                 total_dist += dist;
             }
         }
