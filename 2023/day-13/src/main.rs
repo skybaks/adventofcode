@@ -7,7 +7,8 @@ struct PatternType {
 
 fn main() {
     let data = read_input();
-    part1(&data);
+    partx(&data, 1);
+    partx(&data, 2);
 }
 
 fn read_input() -> Vec<PatternType> {
@@ -48,34 +49,50 @@ fn read_input() -> Vec<PatternType> {
     processed_patterns
 }
 
-fn part1(patterns: &Vec<PatternType>) {
+fn partx(patterns: &Vec<PatternType>, part: i64) {
     let mut total_value = 0;
     for (i, pattern) in patterns.iter().enumerate() {
         let mut pattern_value = 0;
-        if let (true, index) = test_symmetry(&pattern.verti) {
+        if let (true, index) = test_symmetry(&pattern.verti, part == 2) {
             pattern_value += index + 1;
-        } else if let (true, index) = test_symmetry(&pattern.horiz) {
+        } else if let (true, index) = test_symmetry(&pattern.horiz, part == 2) {
             pattern_value += 100 * (index + 1);
         } else {
             panic!("NO MATCHES?!?!");
         }
-        println!("{}/{}: {}", 1 + i, patterns.len(), pattern_value);
+        //println!("{}/{}: {}", 1 + i, patterns.len(), pattern_value);
         total_value += pattern_value;
     }
-    println!("Part 1: {}", total_value);
+    println!("Part {}: {}", part, total_value);
 }
 
-fn test_symmetry(elements: &Vec<String>) -> (bool, usize) {
+fn test_symmetry(elements: &Vec<String>, smudge: bool) -> (bool, usize) {
     for i in 0..elements.len() - 1 {
         let curr_elem = elements.get(i).expect("Error getting current element");
         let next_elem = elements.get(i + 1).expect("Error getting next element");
-        if curr_elem == next_elem {
+        let diffs = string_difference_count(curr_elem, next_elem);
+        if diffs == 0 || (diffs == 1 && smudge) {
             let test1 = elements[..i + 1].iter().rev();
             let test2 = elements[i + 1..].iter();
-            if test1.zip(test2).all(|(a, b)| a == b) {
+            //if test1.zip(test2).all(|(a, b)| a == b) {
+            //    return (true, i);
+            //}
+            let mut total_diffs = 0;
+            for (a, b) in test1.zip(test2) {
+                total_diffs += string_difference_count(a, b);
+            }
+            if (smudge && total_diffs == 1) || (!smudge && total_diffs == 0) {
                 return (true, i);
             }
         }
     }
     return (false, 0);
+}
+
+fn string_difference_count(string_a: &String, string_b: &String) -> usize {
+    string_a
+        .chars()
+        .zip(string_b.chars())
+        .filter(|(a, b)| a != b)
+        .count()
 }
