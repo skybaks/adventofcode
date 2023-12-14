@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 struct SpringCondition {
     arrangement: Vec<i64>,
@@ -7,14 +7,13 @@ struct SpringCondition {
 
 fn main() {
     let data = read_input();
-    part1(&data);
-    //part2(&data);
+    part1_1(&data);
+    part2(&data);
 }
 
 fn read_input() -> Vec<SpringCondition> {
-    let contents =
-        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-12\\example.txt")
-            .expect("Error reading input file");
+    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-12\\input.txt")
+        .expect("Error reading input file");
     let mut springs = Vec::new();
     for line in contents.lines() {
         let mut split = line.split_ascii_whitespace();
@@ -40,7 +39,6 @@ fn part1(springs: &Vec<SpringCondition>) {
     let mut total_value = 0;
     for (i, spring) in springs.iter().enumerate() {
         let repl_num = spring.condition.iter().filter(|&c| *c == '?').count();
-        println!("{}", repl_num);
 
         let mut valids = 0;
         for i in 0..2u128.pow(repl_num as u32) {
@@ -52,10 +50,14 @@ fn part1(springs: &Vec<SpringCondition>) {
                 valids += 1;
             }
         }
-        total_value += valids;
         println!("{}: {}", i, valids);
+        total_value += valids;
     }
     println!("Part 1: {}", total_value);
+}
+
+fn part1_1(springs: &Vec<SpringCondition>) {
+    println!("Part 1: {}", test_springs(springs));
 }
 
 fn part2(springs: &Vec<SpringCondition>) {
@@ -70,16 +72,99 @@ fn part2(springs: &Vec<SpringCondition>) {
             new_arrange.extend(spring.arrangement.iter());
             new_condition.extend(spring.condition.iter());
         }
-        for c in &new_condition {
-            print!("{}", c);
-        }
-        println!(" {:?}", new_arrange);
         new_springs.push(SpringCondition {
             arrangement: new_arrange,
             condition: new_condition,
         });
     }
-    //part1(&new_springs);
+    println!("Part 2: {}", test_springs(&new_springs));
+}
+
+fn test_springs(springs: &Vec<SpringCondition>) -> i64 {
+    let mut total_valid = 0;
+    for (i, spring) in springs.iter().enumerate() {
+        let mut answer_cache = HashMap::new();
+        let valid = test_spring_recursive(spring, 0, 0, 0, &mut answer_cache);
+        println!("{}/{}: {}", i + 1, springs.len(), valid);
+        total_valid += valid;
+    }
+    total_valid
+}
+
+fn test_spring_recursive(
+    spring: &SpringCondition,
+    condition_index: usize,
+    arrangement_index: usize,
+    curr_group: i64,
+    cache: &mut HashMap<(usize, usize, i64), i64>,
+) -> i64 {
+    if let Some(val) = cache.get(&(condition_index, arrangement_index, curr_group)) {
+        return *val;
+    }
+
+    if condition_index == spring.condition.len() {
+        if (arrangement_index == spring.arrangement.len() && curr_group == 0)
+            || (arrangement_index == spring.arrangement.len() - 1
+                && *spring
+                    .arrangement
+                    .get(arrangement_index)
+                    .expect("Error getting current group 1")
+                    == curr_group)
+        {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    let curr_char = *spring
+        .condition
+        .get(condition_index)
+        .expect("Error getting current condition");
+
+    let mut valids = 0;
+    for test_char in &['.', '#'] {
+        // Branching paths when encountering '?' character
+        if *test_char == curr_char || curr_char == '?' {
+            if *test_char == '#' {
+                valids += test_spring_recursive(
+                    spring,
+                    condition_index + 1,
+                    arrangement_index,
+                    curr_group + 1,
+                    cache,
+                );
+            } else {
+                if curr_group == 0 {
+                    valids += test_spring_recursive(
+                        spring,
+                        condition_index + 1,
+                        arrangement_index,
+                        0,
+                        cache,
+                    );
+                } else if arrangement_index < spring.arrangement.len()
+                    && curr_group
+                        == *spring
+                            .arrangement
+                            .get(arrangement_index)
+                            .expect("Error getting current group 2")
+                {
+                    valids += test_spring_recursive(
+                        spring,
+                        condition_index + 1,
+                        arrangement_index + 1,
+                        0,
+                        cache,
+                    );
+                }
+            }
+        }
+    }
+
+    cache.insert((condition_index, arrangement_index, curr_group), valids);
+
+    return valids;
 }
 
 fn test_valid(spring: &SpringCondition, replacements: &Vec<char>) -> bool {
