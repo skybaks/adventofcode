@@ -21,13 +21,13 @@ struct DijkstraDist {
 
 fn main() {
     let (data, max_len) = read_input();
-    //partx(&data, &max_len);
-    part1(&data, &max_len);
+    partx(&data, &max_len);
+    //part1(&data, &max_len);
 }
 
 fn read_input() -> (HashMap<(i64, i64), i64>, (i64, i64)) {
     let contents =
-        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-17\\example2.txt")
+        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-17\\input.txt")
             .expect("Error reading input file");
     let mut coords = HashMap::new();
     let mut max_len = (0, contents.lines().count() as i64);
@@ -70,11 +70,7 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
         points_to_visit.remove(&point);
         points_visited.insert(point);
 
-        let current_cost = if let Some(cost) = point_costs.get(&point) {
-            *cost
-        } else {
-            0
-        };
+        let current_cost = *point_costs.get(&point).expect("Error getting current cost");
 
         for (delta_x, delta_y, dir) in &all_directions {
             let new_x = point.pos.0 + delta_x;
@@ -90,9 +86,9 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
                 continue;
             }
 
-            let mut dir_amt = point.dir_amt;
+            let mut dir_amt = 1;
             if *dir == point.dir {
-                dir_amt += 1;
+                dir_amt = point.dir_amt + 1;
                 if dir_amt > 3 {
                     continue;
                 }
@@ -103,13 +99,9 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
                 continue;
             }
 
-            let new_cost = if let Some(point_cost) = points.get(&new_dist.pos) {
-                *point_cost
-            } else {
-                0
-            } + current_cost;
+            let new_cost = *points.get(&new_dist.pos).expect("Error getting point") + current_cost;
 
-            if !point_costs.contains_key(&new_dist) || point_costs.get(&new_dist).expect("Error getting point cost") > &new_cost {
+            if !point_costs.contains_key(&new_dist) || *point_costs.get(&new_dist).expect("Error getting point cost") > new_cost {
                 point_costs.insert(new_dist, new_cost);
             }
             points_to_visit.insert(new_dist);
@@ -166,14 +158,17 @@ fn part1(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
             let mut newl = 1;
             if dx2 == dx && dy2 == dy {
                 newl = l + 1;
-            }
-            if newl > 10 {
-                continue;
-            }
-            if dx != 0 || dy != 0 {
-                if newl < 4 && !(dx2 == dx && dy2 == dy) {
-                    println!("skip");
+                if newl > 10 {
                     continue;
+                }
+            } else {
+                if dx != 0 || dy != 0 {
+                    if newl <= 4 && !(dx2 == dx && dy2 == dy) {
+                        println!("skip");
+                        continue;
+                    }
+                } else {
+                    println!("not rdy");
                 }
             }
             let newcost = costs
