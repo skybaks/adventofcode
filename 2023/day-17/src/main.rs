@@ -27,7 +27,7 @@ fn main() {
 
 fn read_input() -> (HashMap<(i64, i64), i64>, (i64, i64)) {
     let contents =
-        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-17\\input.txt")
+        fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-17\\example2.txt")
             .expect("Error reading input file");
     let mut coords = HashMap::new();
     let mut max_len = (0, contents.lines().count() as i64);
@@ -89,9 +89,11 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
             let mut dir_amt = 1;
             if *dir == point.dir {
                 dir_amt = point.dir_amt + 1;
-                if dir_amt > 3 {
+                if dir_amt > 10 {
                     continue;
                 }
+            } else if *dir != point.dir && point.dir != DirType::None && point.dir_amt < 4 {
+                continue;
             }
 
             let new_dist = DijkstraDist{ pos: (new_x, new_y), dir: *dir, dir_amt };
@@ -110,7 +112,7 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
 
     let (k, v) = point_costs
         .iter()
-        .filter(|c| c.0.pos.0 == max_len.0 - 1 && c.0.pos.1 == max_len.1 - 1)
+        .filter(|&(c, _)| c.pos.0 == max_len.0 - 1 && c.pos.1 == max_len.1 - 1 && c.dir_amt >= 4)
         .min_by(|a, b| a.1.cmp(b.1))
         .expect("Error getting best cost");
     println!("{}", v);
