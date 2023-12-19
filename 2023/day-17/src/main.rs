@@ -22,7 +22,6 @@ struct DijkstraDist {
 fn main() {
     let (data, max_len) = read_input();
     partx(&data, &max_len);
-    //part1(&data, &max_len);
 }
 
 fn read_input() -> (HashMap<(i64, i64), i64>, (i64, i64)) {
@@ -117,92 +116,4 @@ fn partx(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
         .expect("Error getting best cost");
     println!("{}", v);
 
-}
-
-fn part1(points: &HashMap<(i64, i64), i64>, max_len: &(i64, i64)) {
-    let mut costs = HashMap::new();
-    costs.insert((0, 0, 0, 0, 0), 0);
-    let mut solved = HashSet::new();
-    let mut todo = HashSet::new();
-    todo.insert((0, 0, 0, 0, 0));
-    while todo.len() > 0 {
-        let (x, y, dx, dy, l) = todo
-            .iter()
-            .min_by(|a, b| {
-                costs
-                    .get(a)
-                    .unwrap_or_else(|| &i64::MAX)
-                    .cmp(costs.get(b).unwrap_or_else(|| &i64::MAX))
-            })
-            .expect("Error getting next todo")
-            .clone();
-        todo.remove(&(
-            x.to_owned(),
-            y.to_owned(),
-            dx.to_owned(),
-            dy.to_owned(),
-            l.to_owned(),
-        ));
-        solved.insert((
-            x.to_owned(),
-            y.to_owned(),
-            dx.to_owned(),
-            dy.to_owned(),
-            l.to_owned(),
-        ));
-        for (dx2, dy2) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
-            if !(0 <= x + dx2 && x + dx2 < max_len.0 && 0 <= y + dy2 && y + dy2 < max_len.1) {
-                continue;
-            }
-            if dx2 == -dx && dy2 == -dy {
-                continue;
-            }
-            let mut newl = 1;
-            if dx2 == dx && dy2 == dy {
-                newl = l + 1;
-                if newl > 10 {
-                    continue;
-                }
-            } else {
-                if dx != 0 || dy != 0 {
-                    if newl <= 4 && !(dx2 == dx && dy2 == dy) {
-                        println!("skip");
-                        continue;
-                    }
-                } else {
-                    println!("not rdy");
-                }
-            }
-            let newcost = costs
-                .get(&(
-                    x.to_owned(),
-                    y.to_owned(),
-                    dx.to_owned(),
-                    dy.to_owned(),
-                    l.to_owned(),
-                ))
-                .expect("Error getting cost")
-                + points
-                    .get(&(x + dx2, y + dy2))
-                    .expect("Error getting point");
-            if solved.contains(&(x + dx2, y + dy2, dx2, dy2, newl)) {
-                continue;
-            }
-            if !costs.contains_key(&(x + dx2, y + dy2, dx2, dy2, newl))
-                || *costs
-                    .get(&(x + dx2, y + dy2, dx2, dy2, newl))
-                    .expect("Error getting cost")
-                    > newcost
-            {
-                costs.insert((x + dx2, y + dy2, dx2, dy2, newl), newcost);
-            }
-            todo.insert((x + dx2, y + dy2, dx2, dy2, newl));
-        }
-    }
-    let (k, v) = costs
-        .iter()
-        .filter(|&(k, _)| k.0 == max_len.0 - 1 && k.1 == max_len.1 - 1)
-        .min_by(|a, b| a.1.cmp(b.1))
-        .expect("Error getting best cost");
-    println!("{}", v);
 }
