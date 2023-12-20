@@ -30,7 +30,7 @@ fn read_input() -> (
     HashMap<String, Vec<WorkflowRule>>,
     Vec<HashMap<PartCateg, i64>>,
 ) {
-    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-19\\example.txt")
+    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-19\\input.txt")
         .expect("Error reading input file");
 
     let mut workflows = HashMap::new();
@@ -152,15 +152,17 @@ fn part2(workflows: &HashMap<String, Vec<WorkflowRule>>) {
         path_ranges.insert(PartCateg::M, (1, 4000));
         path_ranges.insert(PartCateg::A, (1, 4000));
         path_ranges.insert(PartCateg::S, (1, 4000));
-        println!("{:?}", path);
         for (part, comp, val) in path {
             let range = path_ranges.get_mut(part).expect("Error getting part range");
             match comp {
-                CompType::GreaterThan => { range.0 = range.0.max(*val); },
-                CompType::LessThan => { range.1 = range.1.min(*val); },
+                CompType::GreaterThan => {
+                    range.0 = range.0.max(*val);
+                }
+                CompType::LessThan => {
+                    range.1 = range.1.min(*val);
+                }
             }
         }
-        println!("{:?}", path_ranges);
         let mut combinations = -1;
         for part in [PartCateg::X, PartCateg::M, PartCateg::A, PartCateg::S] {
             let path_range = path_ranges.get(&part).expect("Error getting path range");
@@ -170,57 +172,48 @@ fn part2(workflows: &HashMap<String, Vec<WorkflowRule>>) {
                 combinations *= path_range.1 - path_range.0 + 1;
             }
         }
-        println!("{}", combinations);
         total += combinations;
     }
-    println!("{}", total);
-    // 97457328000000
-    // 93205398120000
-    // 167409079868000
-    // 256000000000000
+    println!("Part 2: {}", total);
 }
 
-fn investigate_workflow(workflows: &HashMap<String, Vec<WorkflowRule>>, workflow_name: &String, limits: Vec<(PartCateg, CompType, i64)>) -> Vec<Vec<(PartCateg, CompType, i64)>> {
+fn investigate_workflow(
+    workflows: &HashMap<String, Vec<WorkflowRule>>,
+    workflow_name: &String,
+    limits: Vec<(PartCateg, CompType, i64)>,
+) -> Vec<Vec<(PartCateg, CompType, i64)>> {
     let mut all_limits = Vec::new();
     let mut local_limits = limits;
     if let Some(workflow) = workflows.get(workflow_name) {
         for rule in workflow {
             match rule {
-                WorkflowRule::ConditionRule(
-                    part_category,
-                    comparison,
-                    val,
-                    val_if_true,
-                ) => {
+                WorkflowRule::ConditionRule(part_category, comparison, val, val_if_true) => {
                     match comparison {
                         CompType::GreaterThan => {
                             let mut limits_clone = local_limits.clone();
                             limits_clone.push((*part_category, *comparison, *val + 1));
                             if val_if_true == "A" {
-                                all_limits.push(limits_clone);
-                                return all_limits;
+                                all_limits.push(limits_clone.clone());
                             }
                             let invest = investigate_workflow(workflows, val_if_true, limits_clone);
                             all_limits.extend(invest);
                             local_limits.push((*part_category, CompType::LessThan, *val));
-                        },
+                        }
                         CompType::LessThan => {
                             let mut limits_clone = local_limits.clone();
                             limits_clone.push((*part_category, *comparison, *val - 1));
                             if val_if_true == "A" {
-                                all_limits.push(limits_clone);
-                                return all_limits;
+                                all_limits.push(limits_clone.clone());
                             }
                             let invest = investigate_workflow(workflows, val_if_true, limits_clone);
                             all_limits.extend(invest);
                             local_limits.push((*part_category, CompType::GreaterThan, *val));
-                        },
+                        }
                     }
                 }
                 WorkflowRule::FallThruRule(val_automatically) => {
                     if val_automatically == "A" {
-                        all_limits.push(local_limits);
-                        return all_limits;
+                        all_limits.push(local_limits.clone());
                     }
                     let invest = investigate_workflow(workflows, val_automatically, local_limits);
                     all_limits.extend(invest);
