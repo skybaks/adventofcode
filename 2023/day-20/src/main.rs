@@ -124,6 +124,18 @@ fn part1(modules_orig: &HashMap<String, ModuleType>) {
 
 fn part2(modules_orig: &HashMap<String, ModuleType>) {
     let mut modules = modules_orig.clone();
+    let mut cycles = 0;
+    loop {
+        cycles += 1;
+        let count = press_button(&mut modules);
+        if count.0 < 0 {
+            break;
+        }
+
+        // comment out to run indivdual test for part 2
+        break;
+    }
+    println!("cycles: {}", cycles);
 }
 
 fn press_button(modules: &mut HashMap<String, ModuleType>) -> (i64, i64) {
@@ -143,6 +155,19 @@ fn press_button(modules: &mut HashMap<String, ModuleType>) -> (i64, i64) {
                 _ => {}
             }
             //println!("{} -{:?}-> {}", pulse_src, pulse, target);
+
+            // For part 2, find the cycles for each prerequesite to get Low->rx, then take the lcm
+            // in my input it was
+            // kv: 3739
+            // jg: 3911
+            // rz: 4073
+            // mr: 4003
+            // 238420328103151
+            /*
+            if pulse_src == "mr" && pulse == PulseType::High {
+                return (-1, -1);
+            }
+            */
 
             if let Some(module) = modules.get_mut(target) {
                 let (out_targets, out_pulse) = module.input_pulse(&pulse_src, &pulse);
