@@ -1,4 +1,4 @@
-use std::{fs, collections::HashMap};
+use std::{collections::HashMap, fs};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 enum PulseType {
@@ -19,7 +19,7 @@ impl ModuleType {
         match self {
             ModuleType::Broadcast(outs) => {
                 return (outs, *pulse);
-            },
+            }
             ModuleType::Flipflop(outs, state) => {
                 let out_pulse = if *pulse == PulseType::Low && !*state {
                     *state = true;
@@ -31,7 +31,7 @@ impl ModuleType {
                     PulseType::Noop
                 };
                 return (outs, out_pulse);
-            },
+            }
             ModuleType::Conjunction(outs, memory) => {
                 if let Some(mem_pulse) = memory.get_mut(src_id) {
                     *mem_pulse = *pulse;
@@ -42,7 +42,7 @@ impl ModuleType {
                     PulseType::Low
                 };
                 return (outs, out_pulse);
-            },
+            }
         }
     }
 }
@@ -50,22 +50,35 @@ impl ModuleType {
 fn main() {
     let data = read_input();
     part1(&data);
+    part2(&data);
 }
 
 fn read_input() -> HashMap<String, ModuleType> {
-    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-20\\input.txt").expect("Error reading input file.");
+    let contents = fs::read_to_string("D:\\Projects\\Code\\adventofcode\\2023\\day-20\\input.txt")
+        .expect("Error reading input file.");
     let mut modules = HashMap::new();
     let mut conjunction_inputs = HashMap::new();
     for line in contents.lines() {
         let mut split_line = line.split(" -> ");
         let module_desc = split_line.next().expect("Error getting module desc");
-        let dest_modules = split_line.next().expect("Error getting destination modules").split(",").map(|s| s.trim().to_owned()).collect::<Vec<String>>();
+        let dest_modules = split_line
+            .next()
+            .expect("Error getting destination modules")
+            .split(",")
+            .map(|s| s.trim().to_owned())
+            .collect::<Vec<String>>();
         if module_desc == "broadcaster" {
             modules.insert(module_desc.to_owned(), ModuleType::Broadcast(dest_modules));
         } else if module_desc.starts_with("%") {
-            modules.insert(module_desc[1..].to_owned(), ModuleType::Flipflop(dest_modules, false));
+            modules.insert(
+                module_desc[1..].to_owned(),
+                ModuleType::Flipflop(dest_modules, false),
+            );
         } else if module_desc.starts_with("&") {
-            modules.insert(module_desc[1..].to_owned(), ModuleType::Conjunction(dest_modules, HashMap::new()));
+            modules.insert(
+                module_desc[1..].to_owned(),
+                ModuleType::Conjunction(dest_modules, HashMap::new()),
+            );
             conjunction_inputs.insert(module_desc[1..].to_owned(), Vec::new());
         } else {
             panic!("Unexpected module name {}", module_desc);
@@ -102,23 +115,32 @@ fn part1(modules_orig: &HashMap<String, ModuleType>) {
         let count = press_button(&mut modules);
         total_count.0 += count.0;
         total_count.1 += count.1;
-        if modules == *modules_orig || cycles == 1000 {
+        if cycles == 1000 {
             break;
         }
     }
-    println!("{:?} {} -> {}", total_count, cycles, total_count.0 * total_count.1);
+    println!("Part 1: {}", total_count.0 * total_count.1);
+}
+
+fn part2(modules_orig: &HashMap<String, ModuleType>) {
+    let mut modules = modules_orig.clone();
 }
 
 fn press_button(modules: &mut HashMap<String, ModuleType>) -> (i64, i64) {
     let mut pulse_count = (0, 0);
-    let mut pulse_queue = vec![(String::from("button"), vec![String::from("broadcaster")], PulseType::Low)];
+    let mut pulse_queue = vec![(
+        String::from("button"),
+        vec![String::from("broadcaster")],
+        PulseType::Low,
+    )];
     while !pulse_queue.is_empty() {
-        let (pulse_src, pulse_targets, pulse) = pulse_queue.pop().expect("Error popping from queue");
+        let (pulse_src, pulse_targets, pulse) =
+            pulse_queue.pop().expect("Error popping from queue");
         for target in &pulse_targets {
             match pulse {
                 PulseType::High => pulse_count.1 += 1,
                 PulseType::Low => pulse_count.0 += 1,
-                _ => {},
+                _ => {}
             }
             //println!("{} -{:?}-> {}", pulse_src, pulse, target);
 
