@@ -1,2 +1,4 @@
 target/
 *.txt
+*.pyc
+__pycache__/
