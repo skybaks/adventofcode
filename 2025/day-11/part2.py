@@ -9,6 +9,24 @@ if __name__ == "__main__":
             (key, conns) = line.split(':')
             branches[key] = [c for c in conns.split(' ') if c]
 
+    print(f"started with {len(branches)}")
+    while True:
+        consolidate_keys: list[str] = []
+        for key, vals in branches.items():
+            if len(vals) == 1:
+                consolidate_keys.append(key)
+        if not consolidate_keys:
+            break
+        for key in consolidate_keys:
+            val = branches[key][0]
+            del branches[key]
+            for other_key, other_vals in branches.items():
+                for i in range(len(other_vals)):
+                    if branches[other_key][i] == key:
+                        branches[other_key][i] = val
+    print(f"consolidated to {len(branches)}")
+
+    """
     path_count = 0
     def traverse_to_out(
             entry: str,
@@ -30,4 +48,23 @@ if __name__ == "__main__":
             traverse_to_out(connection, local_touched_fft, local_touched_dac)
     traverse_to_out('svr', False, False)
     print(path_count)
+    """
+    path_count = 0
+    def traverse_to_goal(entry: str, goal: str, parents: list[str]) -> None:
+        for connection in branches[entry]:
+            if connection == 'out' or connection == goal:
+                if connection == goal:
+                    global path_count
+                    path_count += 1
+                    print(','.join([*parents, connection]))
+                continue
+            traverse_to_goal(connection, goal, [*parents, connection])
+    traverse_to_goal('fft', 'dac', ['fft'])
+    print(path_count)
+
+    # dac->fft = 0 !!
+    # dac->out = 3050
+    # roughly the same path to get to dac, should just find all the ways that
+    # fft can get on the path that leads to the path that least to dac...
+
     pass
