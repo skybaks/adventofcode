@@ -9,58 +9,25 @@ if __name__ == "__main__":
             (key, conns) = line.split(':')
             branches[key] = [c for c in conns.split(' ') if c]
 
-    print(f"started with {len(branches)}")
-    while True:
-        consolidate_keys: list[str] = []
-        for key, vals in branches.items():
-            if len(vals) == 1:
-                consolidate_keys.append(key)
-        if not consolidate_keys:
-            break
-        for key in consolidate_keys:
-            val = branches[key][0]
-            del branches[key]
-            for other_key, other_vals in branches.items():
-                for i in range(len(other_vals)):
-                    if branches[other_key][i] == key:
-                        branches[other_key][i] = val
-    print(f"consolidated to {len(branches)}")
-
-    """
-    path_count = 0
-    def traverse_to_out(
-            entry: str,
-            touched_fft: bool,
-            touched_dac: bool
-        ) -> None:
-        local_touched_fft = touched_fft
-        local_touched_dac = touched_dac
-        for connection in branches[entry]:
-            if connection == 'out':
-                if touched_dac and touched_fft:
-                    global path_count
-                    path_count += 1
-                continue
-            elif connection == 'fft':
-                local_touched_fft = True
-            elif connection == 'dac':
-                local_touched_dac = True
-            traverse_to_out(connection, local_touched_fft, local_touched_dac)
-    traverse_to_out('svr', False, False)
-    print(path_count)
-    """
-    path_count = 0
-    def traverse_to_goal(entry: str, goal: str, parents: list[str]) -> None:
+    def traverse_to_goal(entry: str, goal: str, cache: dict[str, int]) -> int:
+        if entry in cache:
+            return cache[entry]
+        stage_total = 0
         for connection in branches[entry]:
             if connection == 'out' or connection == goal:
                 if connection == goal:
-                    global path_count
-                    path_count += 1
-                    print(','.join([*parents, connection]))
+                    stage_total += 1
                 continue
-            traverse_to_goal(connection, goal, [*parents, connection])
-    traverse_to_goal('fft', 'dac', ['fft'])
-    print(path_count)
+            result = traverse_to_goal(connection, goal, cache)
+            if result > 0:
+                stage_total += result
+        cache[entry] = stage_total
+        return stage_total
+    svr_to_fft = traverse_to_goal('svr', 'fft', {})
+    fft_to_dac = traverse_to_goal('fft', 'dac', {})
+    dac_to_out = traverse_to_goal('dac', 'out', {})
+    total = svr_to_fft * fft_to_dac * dac_to_out
+    print(total)
 
     # dac->fft = 0 !!
     # dac->out = 3050
