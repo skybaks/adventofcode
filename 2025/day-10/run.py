@@ -35,26 +35,64 @@ if __name__ == "__main__":
             presses = -1
             bad_guesses = {}
             iterations = 0
-            #print(buttons)
-            while guesses:
-                guess = heapq.heappop(guesses)
-                if guess in bad_guesses:
-                    continue
-                #print(np.array(guess))
-                result = (buttons @ guess) - power
-                if not np.any(result):
-                    presses = np.array(guess).sum()
-                    break
-                bad_guesses[guess] = None
+            print(buttons)
+            best_guess = None
+            best_result = None
+            most_closeness = -1
+            while True:
+                getting_better = False
+                while guesses:
+                    guess = heapq.heappop(guesses)
+                    if guess in bad_guesses:
+                        continue
+                    result = (buttons @ guess) - power
+                    closeness = abs(result).sum()
+                    if most_closeness < 0:
+                        getting_better = True
+                        most_closeness = closeness
+                        best_guess = guess
+                        best_result = result
+                    elif closeness < most_closeness:
+                        getting_better = True
+                        most_closeness = closeness
+                        best_guess = guess
+                        best_result = result
+                    if not np.any(result):
+                        presses = np.array(guess).sum()
+                        break
+                    bad_guesses[guess] = None
 
+                closeness = most_closeness
+                result = best_result
+                guess = best_guess
                 # Need to get better at making guesses
-                #print(result)
+                print("result " + str(result) + " guess " + str(np.array(guess)) + " closeness " + str(closeness))
+                if not getting_better or presses > 0:
+                    break
+
                 for i in range(len(result)):
                     curr_result_num = result[i]
                     #print(curr_result_num)
                     if curr_result_num == 0:
                         continue
+                    singular_change = 1
+                    if curr_result_num < 0:
+                        singular_change = -1
                     num_splits = np.array(buttons[i]).sum()
+                    for r in range(num_splits):
+                        num_add_count = 0
+                        new_guess = np.array(guess)
+                        for new_guess_i in range(len(new_guess)):
+                            if buttons[i][new_guess_i] != 0:
+                                num_add_count += 1
+                            if num_add_count > r:
+                                #new_guess[new_guess_i] += (curr_result_num * -1)
+                                new_guess[new_guess_i] += (singular_change * -1)
+                                break
+                        new_guess[new_guess < 0] = 0
+                        #print(new_guess)
+                        heapq.heappush(guesses, tuple(new_guess))
+                    """
                     numr = abs(curr_result_num) // num_splits
                     rmdr = abs(curr_result_num) % num_splits
                     if curr_result_num > 0:
@@ -80,6 +118,8 @@ if __name__ == "__main__":
                         #print(new_guess)
                         heapq.heappush(guesses, tuple(new_guess))
                     """
+
+                    """
                     for j in range(len(buttons[i])):
                         if result[i] > 0 and buttons[i][j] != 0:
                             new_guess = list(guess)
@@ -94,13 +134,12 @@ if __name__ == "__main__":
                     """
                     #break
                 #break
-                #iterations += 1
-                #if iterations > 1:
-                #    break
+                iterations += 1
+                if iterations > 100:
+                    break
 
             count += 1
             print(f"{count} presses: {presses}")
-            pprint(bad_guesses)
             total += presses
             #break
     print(f"total: {total}")
