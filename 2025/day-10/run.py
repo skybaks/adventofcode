@@ -5,7 +5,7 @@ from pprint import pprint
 
 if __name__ == "__main__":
     total = 0
-    with open('test.txt', 'r') as handle:
+    with open('demo.txt', 'r') as handle:
         count = 0
         for line in handle.readlines():
             buttons = [
@@ -30,12 +30,14 @@ if __name__ == "__main__":
             buttons = np.array(btns).transpose()
 
             first_guess = tuple(np.zeros(buttons.shape[1], dtype=int))
+            #first_guess = tuple(np.array([3, 0, 5, 2, 2]))
             guesses = []
             heapq.heappush(guesses, first_guess)
             presses = -1
             bad_guesses = {}
             iterations = 0
             print(buttons)
+            last_closeness = -1
             best_guess = None
             best_result = None
             most_closeness = -1
@@ -44,15 +46,20 @@ if __name__ == "__main__":
                 while guesses:
                     guess = heapq.heappop(guesses)
                     if guess in bad_guesses:
+                        pass
+                        result = None
                         continue
                     result = (buttons @ guess) - power
                     closeness = abs(result).sum()
+                    if True:
+                        print("result " + str(result) + " guess " + str(np.array(guess)) + " closeness " + str(closeness))
+                        pass
                     if most_closeness < 0:
                         getting_better = True
                         most_closeness = closeness
                         best_guess = guess
                         best_result = result
-                    elif closeness < most_closeness:
+                    elif closeness < most_closeness or (closeness == most_closeness and sum(guess) < sum(best_guess)):
                         getting_better = True
                         most_closeness = closeness
                         best_guess = guess
@@ -62,13 +69,22 @@ if __name__ == "__main__":
                         break
                     bad_guesses[guess] = None
 
+                if last_closeness == most_closeness:
+                    #raise Exception("get me out")
+                    pass
+                last_closeness = most_closeness
+
                 closeness = most_closeness
                 result = best_result
                 guess = best_guess
                 # Need to get better at making guesses
-                print("result " + str(result) + " guess " + str(np.array(guess)) + " closeness " + str(closeness))
-                if not getting_better or presses > 0:
+                print("iteration best result " + str(result) + " guess " + str(np.array(guess)) + " closeness " + str(closeness))
+                print("----------------------------------")
+                if presses > 0:
                     break
+                if not getting_better:
+                    raise Exception("not improving")
+                    most_closeness = -1
 
                 for i in range(len(result)):
                     curr_result_num = result[i]
@@ -82,16 +98,22 @@ if __name__ == "__main__":
                     for r in range(num_splits):
                         num_add_count = 0
                         new_guess = np.array(guess)
+                        new_guess2 = np.array(guess)
                         for new_guess_i in range(len(new_guess)):
                             if buttons[i][new_guess_i] != 0:
                                 num_add_count += 1
                             if num_add_count > r:
-                                #new_guess[new_guess_i] += (curr_result_num * -1)
-                                new_guess[new_guess_i] += (singular_change * -1)
+                                new_guess[new_guess_i] += (curr_result_num * -1)
+                                new_guess2[new_guess_i] += (singular_change * -1)
                                 break
                         new_guess[new_guess < 0] = 0
+                        new_guess2[new_guess2 < 0] = 0
                         #print(new_guess)
                         heapq.heappush(guesses, tuple(new_guess))
+                        heapq.heappush(guesses, tuple(new_guess2))
+
+
+
                     """
                     numr = abs(curr_result_num) // num_splits
                     rmdr = abs(curr_result_num) % num_splits
@@ -119,6 +141,8 @@ if __name__ == "__main__":
                         heapq.heappush(guesses, tuple(new_guess))
                     """
 
+
+
                     """
                     for j in range(len(buttons[i])):
                         if result[i] > 0 and buttons[i][j] != 0:
@@ -135,9 +159,11 @@ if __name__ == "__main__":
                     #break
                 #break
                 iterations += 1
-                if iterations > 100:
-                    break
+                #if iterations > 10000:
+                #    break
 
+            if presses <= 0:
+                raise Exception("Did no converge")
             count += 1
             print(f"{count} presses: {presses}")
             total += presses
