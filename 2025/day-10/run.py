@@ -1,11 +1,12 @@
 import numpy as np
+import scipy.optimize
 import heapq
 from pprint import pprint
 
 
 if __name__ == "__main__":
     total = 0
-    with open('demo.txt', 'r') as handle:
+    with open('input.txt', 'r') as handle:
         count = 0
         for line in handle.readlines():
             buttons = [
@@ -29,14 +30,20 @@ if __name__ == "__main__":
                 btns.append(btn)
             buttons = np.array(btns).transpose()
 
-            first_guess = tuple(np.zeros(buttons.shape[1], dtype=int))
+            print(buttons)
+            (nnls_result, norm) = scipy.optimize.nnls(buttons, power)
+            #print()
+            #continue
+            print(nnls_result)
+            first_guess = tuple(nnls_result.round().astype(int))
+            #first_guess = tuple(np.zeros(buttons.shape[1], dtype=int))
             #first_guess = tuple(np.array([3, 0, 5, 2, 2]))
             guesses = []
             heapq.heappush(guesses, first_guess)
+            #heapq.heappush(guesses, tuple(nnls_result.astype(int)))
             presses = -1
             bad_guesses = {}
             iterations = 0
-            print(buttons)
             last_closeness = -1
             best_guess = None
             best_result = None
@@ -84,7 +91,7 @@ if __name__ == "__main__":
                     break
                 if not getting_better:
                     raise Exception("not improving")
-                    most_closeness = -1
+                    #most_closeness = -1
 
                 for i in range(len(result)):
                     curr_result_num = result[i]
